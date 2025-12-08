@@ -294,7 +294,7 @@ Case study: https://dev.to/innermost_47/when-ai-content-systems-reproduce-conten
 ## Contact
 
 - **Author:** Anthony CHARRETIER
-- **Website:** anthony-charretier.fr
+- **Website:** https://anthony-charretier.fr
 - **GitHub:** https://github.com/innermost47
 
 ## License
