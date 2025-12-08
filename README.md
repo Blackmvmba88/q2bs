@@ -1,4 +1,8 @@
-# Q2BSTUDIO Content Farm Auditor
+# Q2BSTUDIO Auditor
+
+![Python Version](https://img.shields.io/badge/python-3.10+-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Status](https://img.shields.io/badge/status-active-success.svg)
 
 A Python-based investigation tool for analyzing industrial-scale automated content generation systems. Developed to document and analyze the publishing patterns of q2bstudio.com.
 
@@ -21,12 +25,29 @@ When their blog showed 36,516+ pages of content, I developed this auditor to sys
 - **Checkpoint System:** Saves progress periodically to prevent data loss
 - **CSV Export:** Exports all data in standard CSV format for further analysis
 
+## Requirements
+
+- Python 3.10+
+- pip (Python package manager)
+
+### Python Dependencies
+
+```bash
+requests
+beautifulsoup4
+matplotlib
+```
+
+All dependencies are listed in `requirements.txt` and will be installed automatically.
+
 ## Installation
 
 ```bash
 git clone https://github.com/innermost47/q2bs.git
 cd q2bs
 python -m venv env
+source env/bin/activate  # On macOS/Linux
+# or: env\Scripts\activate  # On Windows
 pip install -r requirements.txt
 ```
 
@@ -76,7 +97,7 @@ Based on analysis of the period November 20 - December 7, 2025:
 - **Peak day:** 10,251 articles (December 4, 2025)
 - **Frequency:** 1 article every 10.3 seconds
 
-For comparison (approximative):
+For comparison (industry estimates - approximate):
 
 - TechCrunch: ~40 articles/day
 - The Verge: ~30 articles/day
@@ -114,7 +135,7 @@ Archiving system that:
 
 ### `main.py`
 
-Entry point that orchestrates:
+Main entry point that orchestrates:
 
 - User confirmation workflow
 - Scraping execution
@@ -183,6 +204,28 @@ For very large scrapes (30,000+ pages):
 - The checkpoint system helps recover from crashes
 
 ## Data Analysis Tips
+
+### Sample Visualizations
+
+The tool generates three types of visualizations:
+
+#### 1. Statistical Summary
+
+![Stats Summary Example](graphs/3_stats_summary.png)
+
+Shows total articles, daily average, and comparison with major publishers.
+
+#### 2. Publication Timeline
+
+![Timeline Example](graphs/2_timeline.png)
+
+Displays article output over time with peak detection.
+
+#### 3. Daily Production
+
+![Daily Production Example](graphs/1_daily_articles.png)
+
+Breakdown of articles per day with average line.
 
 ### Using the CSV Files
 
@@ -256,4 +299,24 @@ Case study: https://dev.to/innermost_47/when-ai-content-systems-reproduce-conten
 
 ## License
 
-MIT
+MIT License
+
+Copyright (c) 2025 Anthony CHARRETIER
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
