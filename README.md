@@ -286,7 +286,7 @@ The author makes no warranties about the tool's functionality or the accuracy of
 If you use this tool in research or journalism, please cite:
 
 ```
-CHARRETIER, A. (2025). Q2BSTUDIO Content Farm Auditor.
+CHARRETIER, A. (2025). Q2BSTUDIO Auditor.
 GitHub: https://github.com/innermost47/q2bs
 Case study: https://dev.to/innermost_47/when-ai-content-systems-reproduce-content-without-attribution-a-documented-case-study-1h0g
 ```
