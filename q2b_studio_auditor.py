@@ -154,7 +154,6 @@ class Q2BStudioAuditor:
                 print(f"Found {len(articles_on_page)} articles")
                 for article in articles_on_page:
                     self.articles[article["url"]] = article
-                    self.articles_by_date[article["date_parsed"]].append(article)
             else:
                 print(f"No articles found")
 
@@ -169,7 +168,15 @@ class Q2BStudioAuditor:
 
         print(f"\nScraping complete!")
         print(f"Total articles collected: {len(self.articles):,}")
+
+        self.rebuild_articles_by_date()
+
         self.save_checkpoint()
+
+    def rebuild_articles_by_date(self):
+        self.articles_by_date = defaultdict(list)
+        for article in self.articles.values():
+            self.articles_by_date[article["date_parsed"]].append(article)
 
     def save_checkpoint(self):
         print(f"Saving checkpoint ({len(self.articles):,} articles)...")
@@ -278,3 +285,76 @@ class Q2BStudioAuditor:
         }
 
         return report
+
+    def load_checkpoint(self, checkpoint_dir):
+        print(f"\nLoading checkpoint from: {checkpoint_dir}")
+
+        checkpoint_file = os.path.join(checkpoint_dir, "checkpoint.json")
+        if not os.path.exists(checkpoint_file):
+            print(f"No checkpoint.json found in {checkpoint_dir}")
+            return False
+
+        try:
+            with open(checkpoint_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            for article in data.get("articles", []):
+                self.articles[article["url"]] = article
+
+            self.rebuild_articles_by_date()
+
+            self.output_dir = checkpoint_dir
+
+            print(f"Loaded {len(self.articles):,} articles from checkpoint")
+
+            max_page_scraped = max(
+                (article["page_num"] for article in self.articles.values()), default=0
+            )
+            print(f"Last scraped page: {max_page_scraped}")
+
+            return max_page_scraped
+
+        except Exception as e:
+            print(f"Error loading checkpoint: {e}")
+            return False
+
+    def extract_article_id(self, url):
+        try:
+            parts = url.split("/")
+            for i, part in enumerate(parts):
+                if part == "nuestro-blog" and i + 1 < len(parts):
+                    return int(parts[i + 1])
+        except:
+            pass
+        return None
+
+    def get_max_article_id(self):
+        max_id = 0
+        for article in self.articles.values():
+            article_id = self.extract_article_id(article["url"])
+            if article_id and article_id > max_id:
+                max_id = article_id
+        return max_id
+
+    def calculate_resume_page(self, max_page, articles_per_page=9):
+        max_id = self.get_max_article_id()
+        if max_id == 0:
+            return 1
+
+        total_articles_estimated = max_page * articles_per_page
+
+        articles_remaining = total_articles_estimated - max_id
+
+        resume_page = articles_remaining // articles_per_page
+
+        if resume_page < 1:
+            resume_page = 1
+        if resume_page > max_page:
+            resume_page = max_page
+
+        print(f"Max article ID scraped: {max_id:,}")
+        print(f"Total articles estimated: {total_articles_estimated:,}")
+        print(f"Articles remaining: {articles_remaining:,}")
+        print(f"Calculated resume page: {resume_page:,}")
+
+        return resume_page
