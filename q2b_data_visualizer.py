@@ -1,7 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from datetime import datetime as dt
+from datetime import datetime as dt, timedelta
 
 
 class Q2BDataVisualizer:
@@ -181,7 +181,7 @@ class Q2BDataVisualizer:
 
         date_range = f"{earliest} to {latest}"
         ax.set_title(
-            f"Publication Timeline: {date_range}\nAverage: 1 article every {avg_seconds:.1f} seconds (excl. partial days)\nGray markers = incomplete data",
+            f"Publication Timeline: {date_range}\nAverage: 1 article every {avg_seconds:.1f} seconds",
             fontsize=14,
             fontweight="bold",
             pad=20,
@@ -204,23 +204,55 @@ class Q2BDataVisualizer:
         print("Created: 2_timeline.png")
 
     def plot_stats_summary(self, report, output_dir, colors):
+
+        daily_data = report["daily_statistics"]["articles_per_day"]
+        valid_data = {k: v for k, v in daily_data.items() if k != "UNKNOWN_DATE"}
+
+        last_4_weeks_data = {}
+        last_4_weeks_total = 0
+        last_4_weeks_peak = 0
+
+        if valid_data:
+            try:
+                latest_date_str = max(valid_data.keys())
+                latest_date = dt.strptime(latest_date_str, "%Y-%m-%d")
+                four_weeks_ago = latest_date - timedelta(days=28)
+
+                for date_str, count in valid_data.items():
+                    date_obj = dt.strptime(date_str, "%Y-%m-%d")
+                    if date_obj >= four_weeks_ago:
+                        last_4_weeks_data[date_str] = count
+                        last_4_weeks_total += count
+                        if count > last_4_weeks_peak:
+                            last_4_weeks_peak = count
+            except:
+                last_4_weeks_data = valid_data
+                last_4_weeks_total = sum(valid_data.values())
+                last_4_weeks_peak = max(valid_data.values()) if valid_data else 0
+
+        num_days = len(last_4_weeks_data)
+        last_4_weeks_avg = last_4_weeks_total / num_days if num_days > 0 else 0
+
+        if last_4_weeks_data:
+            earliest_4w = min(last_4_weeks_data.keys())
+            latest_4w = max(last_4_weeks_data.keys())
+            date_range_4w = f"{earliest_4w} to {latest_4w}"
+        else:
+            date_range_4w = "No data"
+
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
 
-        date_range = (
-            f"{report['date_range']['earliest']} to {report['date_range']['latest']}"
-        )
         fig.suptitle(
-            f"Q2BSTUDIO Content Farm: Statistical Analysis\nDocumented Period: {date_range}",
+            f"Q2BSTUDIO Content Farm: Statistical Analysis (Last 4 Weeks)\nPeriod: {date_range_4w}",
             fontsize=18,
             fontweight="bold",
             y=0.98,
         )
 
-        total = report["total_articles"]
         ax1.text(
             0.5,
             0.6,
-            f"{total:,}",
+            f"{last_4_weeks_total:,}",
             ha="center",
             va="center",
             fontsize=60,
@@ -230,7 +262,7 @@ class Q2BDataVisualizer:
         ax1.text(
             0.5,
             0.35,
-            "Articles\nDocumented",
+            "Articles Published\n(Last 4 Weeks)",
             ha="center",
             va="center",
             fontsize=18,
@@ -239,11 +271,10 @@ class Q2BDataVisualizer:
         ax1.axis("off")
         ax1.set_facecolor("#f0f0f0")
 
-        avg = report["daily_statistics"]["average_per_day"]
         ax2.text(
             0.5,
             0.6,
-            f"{avg:,.0f}",
+            f"{last_4_weeks_avg:,.0f}",
             ha="center",
             va="center",
             fontsize=60,
@@ -253,32 +284,30 @@ class Q2BDataVisualizer:
         ax2.text(
             0.5,
             0.35,
-            "Articles Per Day\n(Average)",
+            "Articles Per Day\n(Last 4 Weeks Avg)",
             ha="center",
             va="center",
             fontsize=18,
             fontweight="bold",
         )
-
-        seconds = 86400 / avg if avg > 0 else 0
+        seconds = 86400 / last_4_weeks_avg if last_4_weeks_avg > 0 else 0
         ax2.text(
             0.5,
             0.15,
             f"1 article every {seconds:.1f} seconds",
             ha="center",
             va="center",
-            fontsize=14,
-            style="italic",
+            fontsize=25,
             color="red",
+            fontweight="bold",
         )
         ax2.axis("off")
         ax2.set_facecolor("#f0f0f0")
 
-        peak = report["daily_statistics"]["max_per_day"]
         ax3.text(
             0.5,
             0.6,
-            f"{peak:,}",
+            f"{last_4_weeks_peak:,}",
             ha="center",
             va="center",
             fontsize=60,
@@ -288,22 +317,21 @@ class Q2BDataVisualizer:
         ax3.text(
             0.5,
             0.35,
-            "Peak Day\n(Maximum)",
+            "Peak Day\n(Last 4 Weeks Max)",
             ha="center",
             va="center",
             fontsize=18,
             fontweight="bold",
         )
-
-        peak_seconds = 86400 / peak if peak > 0 else 0
+        peak_seconds = 86400 / last_4_weeks_peak if last_4_weeks_peak > 0 else 0
         ax3.text(
             0.5,
             0.15,
             f"1 article every {peak_seconds:.1f} seconds",
             ha="center",
             va="center",
-            fontsize=14,
-            style="italic",
+            fontsize=25,
+            fontweight="bold",
             color="red",
         )
         ax3.axis("off")
@@ -313,7 +341,7 @@ class Q2BDataVisualizer:
             ("TechCrunch", 40),
             ("The Verge", 30),
             ("NY Times", 250),
-            ("Q2BSTUDIO", avg),
+            ("Q2BSTUDIO\n(Last 4 Weeks)", last_4_weeks_avg),
         ]
 
         names = [c[0] for c in comparisons]
@@ -341,7 +369,7 @@ class Q2BDataVisualizer:
 
         ax4.set_xlabel("Articles Per Day", fontsize=12, fontweight="bold")
         ax4.set_title(
-            "Comparison: Daily Output\n(Industry estimates - conservative)",
+            "Comparison: Daily Output (Last 4 Weeks)\n(Industry estimates - conservative)",
             fontsize=14,
             fontweight="bold",
             pad=10,

@@ -16,7 +16,7 @@ def select_checkpoint():
 
     if not checkpoints:
         print("No existing checkpoints found.")
-        return None
+        return None, False
 
     print("\nAvailable checkpoints:")
     print("0. Start fresh (new scraping)")
@@ -41,9 +41,16 @@ def select_checkpoint():
         try:
             choice_num = int(choice)
             if choice_num == 0:
-                return None
+                return None, False
             if 1 <= choice_num <= len(checkpoints):
-                return checkpoints[choice_num - 1]
+                selected_checkpoint = checkpoints[choice_num - 1]
+
+                visualize_only = (
+                    input("Visualize only (skip scraping)? (yes/no): ").strip().lower()
+                    == "yes"
+                )
+
+                return selected_checkpoint, visualize_only
             else:
                 print(f"Please enter a number between 0 and {len(checkpoints)}")
         except ValueError:
@@ -55,7 +62,7 @@ def main():
     print("Q2BSTUDIO PLAGIARISM AUDITOR")
     print("=" * 60)
 
-    checkpoint_dir = select_checkpoint()
+    checkpoint_dir, visualize_only = select_checkpoint()
 
     auditor = Q2BStudioAuditor(create_output_dir=(checkpoint_dir is None))
 
@@ -64,6 +71,23 @@ def main():
 
     if checkpoint_dir:
         loaded = auditor.load_checkpoint(checkpoint_dir)
+
+        if visualize_only:
+            print("\n" + "=" * 60)
+            print("VISUALIZATION MODE - Skipping scraping")
+            print("=" * 60)
+
+            if not loaded:
+                print("Failed to load checkpoint. Cannot visualize.")
+                return
+
+            report = auditor.generate_report()
+            visualizer = Q2BDataVisualizer(input_dir=auditor.output_dir)
+            visualizer.create_visualizations(report)
+
+            print(f"\nALL DONE! Check folder: {auditor.output_dir}")
+            return
+
         if loaded:
             max_page = auditor.get_max_page_number()
             if not max_page:
