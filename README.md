@@ -68,6 +68,73 @@ The script will:
 5. Create data visualizations
 6. Optionally archive a sample to Wayback Machine
 
+### Resume from Checkpoint
+
+The auditor includes a checkpoint system that allows you to resume interrupted scraping sessions:
+
+```bash
+python main.py
+```
+
+When you run the script, you'll be presented with:
+
+1. A list of existing checkpoint directories
+2. Option to select a checkpoint to resume from
+3. Option to start fresh (new scraping)
+4. Option to visualize-only mode (skip scraping)
+
+**The script automatically:**
+
+- Calculates which page to resume from based on article IDs
+- Avoids duplicate articles
+- Continues in the same output directory
+- Preserves all previously scraped data
+
+**Example workflow:**
+
+```
+Available checkpoints:
+0. Start fresh (new scraping)
+1. q2b_audit_20251208_103810 - 242,191 articles - 2025-12-08T10:38:10
+
+Select checkpoint number (0 for fresh start): 1
+Visualize only (skip scraping)? (yes/no): no
+
+Loading checkpoint from: q2b_audit_20251208_103810
+Loaded 242,191 articles from checkpoint
+Min article ID scraped (last article): 91,643
+Calculated resume page: 27,373
+
+Resuming from page 27,373
+This will scrape 10,184 pages (from 27,373 to 37,556). Continue? (yes/no):
+```
+
+### Visualization-Only Mode
+
+If you want to regenerate visualizations without re-scraping:
+
+```bash
+python main.py
+```
+
+Then:
+
+1. Select an existing checkpoint
+2. Answer "yes" to "Visualize only (skip scraping)?"
+
+This will:
+
+- Load the existing data
+- Regenerate all reports
+- Create fresh visualizations
+- Skip the scraping phase entirely
+
+**Use cases:**
+
+- Update graphs with new styling
+- Generate reports after manual data cleaning
+- Create visualizations for different time periods
+
 ### Output Structure
 
 After running, you'll get a timestamped directory:
