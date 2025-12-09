@@ -1,15 +1,19 @@
 {
-  "generated_at": "2025-12-09T01:47:04.710457",
-  "total_articles": 242191,
+  "generated_at": "2025-12-09T11:44:08.006581",
+  "total_articles": 266252,
   "date_range": {
-    "earliest": "2025-11-07",
+    "earliest": "2025-11-03",
     "latest": "2025-12-08"
   },
   "daily_statistics": {
-    "dates": 32,
+    "dates": 36,
     "articles_per_day": {
-      "2025-11-07": 2408,
-      "2025-11-08": 5484,
+      "2025-11-03": 3556,
+      "2025-11-04": 6002,
+      "2025-11-05": 5645,
+      "2025-11-06": 5572,
+      "2025-11-07": 5693,
+      "2025-11-08": 5485,
       "2025-11-09": 5972,
       "2025-11-10": 6839,
       "2025-11-11": 6885,
@@ -41,13 +45,13 @@
       "2025-12-07": 10272,
       "2025-12-08": 4624
     },
-    "average_per_day": 7568.46875,
+    "average_per_day": 7395.888888888889,
     "max_per_day": 10275,
-    "min_per_day": 2408
+    "min_per_day": 3556
   },
   "cleaning_summary": {
-    "initial_article_count": 242191,
-    "final_article_count": 242191,
+    "initial_article_count": 266252,
+    "final_article_count": 266252,
     "duplicates_removed": 0,
     "deduplication_rate": "0.00%"
   }
