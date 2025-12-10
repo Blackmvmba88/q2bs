@@ -59,7 +59,12 @@ class Q2BStudioAuditor:
             if not parsed.scheme or not parsed.netloc:
                 return False
             # Check that URL belongs to q2bstudio domain (exact match or subdomain)
-            if not (parsed.netloc == "q2bstudio.com" or parsed.netloc == "www.q2bstudio.com" or parsed.netloc.endswith(".q2bstudio.com")):
+            # Split domain into parts to validate properly
+            domain_parts = parsed.netloc.split('.')
+            if len(domain_parts) < 2:
+                return False
+            # Check if the last two parts are "q2bstudio" and "com"
+            if domain_parts[-2] != "q2bstudio" or domain_parts[-1] != "com":
                 return False
             return True
         except Exception:
@@ -199,8 +204,8 @@ class Q2BStudioAuditor:
                     else:
                         self.validation_errors += 1
 
-                except Exception as e:
-                    # Log specific parsing errors without stopping
+                except Exception:
+                    # Skip articles that fail to parse
                     self.validation_errors += 1
                     continue
 
@@ -419,8 +424,8 @@ class Q2BStudioAuditor:
         except json.JSONDecodeError:
             print(f"Error: Checkpoint file is not valid JSON")
             return False
-        except Exception:
-            print(f"Error loading checkpoint")
+        except Exception as e:
+            print(f"Error loading checkpoint: {str(e)}")
             return False
 
     def extract_article_id(self, url):
