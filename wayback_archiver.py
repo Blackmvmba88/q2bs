@@ -5,6 +5,7 @@ import time
 from datetime import datetime
 import os
 import random
+from urllib.parse import urlparse
 
 
 class WaybackArchiver:
@@ -21,6 +22,23 @@ class WaybackArchiver:
         self.archived = 0
         self.failed = 0
         self.skipped = 0
+
+    def validate_url(self, url):
+        """Validate that a URL is properly formatted."""
+        if not url or not isinstance(url, str):
+            return False
+        
+        try:
+            parsed = urlparse(url)
+            # Check that URL has scheme and netloc
+            if not parsed.scheme or not parsed.netloc:
+                return False
+            # Only allow http and https schemes
+            if parsed.scheme not in ["http", "https"]:
+                return False
+            return True
+        except Exception:
+            return False
 
     def load_data(self):
         csv_file = os.path.join(self.clean_data_dir, "articles.csv")
@@ -86,6 +104,7 @@ class WaybackArchiver:
             return None
 
     def archive_sample(self, sample_size=500):
+        """Archive a sample of articles with URL validation."""
         print(f"Sample size: {sample_size}")
         print("-" * 60)
 
@@ -102,6 +121,12 @@ class WaybackArchiver:
 
             print(f"\n[{i}/{len(to_archive)}] {title}...")
             print(f"  URL: {url}")
+
+            # Validate URL before attempting to archive
+            if not self.validate_url(url):
+                print(f"Invalid URL format, skipping")
+                self.failed += 1
+                continue
 
             if article.get("archive_url"):
                 print(f"Already archived: {article['archive_url']}")
