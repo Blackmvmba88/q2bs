@@ -1,0 +1,17 @@
+# Include essential documentation
+include README.md
+include LICENSE
+include requirements.txt
+
+# Include sample data if exists
+recursive-include sample_data *
+
+# Exclude development and build artifacts
+global-exclude __pycache__
+global-exclude *.py[co]
+global-exclude .DS_Store
+global-exclude *.so
+global-exclude .git*
+
+# Exclude checkpoint and output directories
+prune q2b_audit_*
