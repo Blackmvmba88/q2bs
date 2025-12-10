@@ -233,8 +233,10 @@ class SimilarityAnalyzer:
             if total_articles > 0 else 0
         )
         
+        from datetime import datetime
+        
         report = {
-            "generated_at": json.dumps({"$date": {"$numberLong": str(int(os.path.getctime(self.input_dir) * 1000))}}),
+            "generated_at": datetime.now().isoformat(),
             "input_directory": self.input_dir,
             "similarity_threshold": self.similarity_threshold,
             "total_articles_analyzed": total_articles,
@@ -326,11 +328,16 @@ class SimilarityAnalyzer:
         self.cluster_by_exact_match()
         
         # Similar pairs detection (only for reasonable dataset sizes)
-        if len(self.articles) <= 10000:
+        # Pairwise comparison is O(n²), so we limit by default to prevent memory issues
+        # For larger datasets, consider sampling or using approximate algorithms
+        max_articles_for_pairwise = 10000  # Configurable threshold
+        
+        if len(self.articles) <= max_articles_for_pairwise:
             self.find_similar_pairs(ngram_size=3)
         else:
             print(f"\nSkipping pairwise similarity (dataset too large: {len(self.articles):,} articles)")
-            print("Pairwise similarity is O(n²) - use sampling for large datasets")
+            print(f"Pairwise similarity is O(n²) - limited to {max_articles_for_pairwise:,} articles")
+            print("Consider sampling for large datasets or use exact match clustering only")
         
         # Generate and save results
         self.save_results()

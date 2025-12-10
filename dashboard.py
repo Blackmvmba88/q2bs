@@ -97,11 +97,18 @@ def main():
     with col1:
         st.metric("Total Articles", f"{len(df):,}")
     
-    with col2:
-        known_dates = df[df['date_parsed'] != 'UNKNOWN_DATE']
-        if len(known_dates) > 0:
-            unique_days = known_dates['date_parsed'].nunique()
+    # Calculate metrics for all columns
+    known_dates = df[df['date_parsed'] != 'UNKNOWN_DATE']
+    unique_days = 0
+    avg_per_day = 0
+    
+    if len(known_dates) > 0:
+        unique_days = known_dates['date_parsed'].nunique()
+        if unique_days > 0:
             avg_per_day = len(known_dates) / unique_days
+    
+    with col2:
+        if avg_per_day > 0:
             st.metric("Avg Articles/Day", f"{avg_per_day:,.0f}")
         else:
             st.metric("Avg Articles/Day", "N/A")
@@ -114,7 +121,7 @@ def main():
             st.metric("Peak Day", "N/A")
     
     with col4:
-        if len(known_dates) > 0 and unique_days > 0:
+        if avg_per_day > 0:
             seconds = 86400 / avg_per_day
             st.metric("Frequency", f"1 article / {seconds:.1f}s")
         else:

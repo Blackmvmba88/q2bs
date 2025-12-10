@@ -1,6 +1,6 @@
 # Q2BSTUDIO Auditor
 
-![Python Version](https://img.shields.io/badge/python-3.10+-blue.svg)
+![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Status](https://img.shields.io/badge/status-active-success.svg)
 
@@ -75,7 +75,7 @@ This is not about condemning technology. It's about **documenting it systematica
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.8+
 - pip (Python package manager)
 
 ### Python Dependencies
