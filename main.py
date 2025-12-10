@@ -6,12 +6,34 @@ import glob
 from datetime import datetime
 
 
+def validate_yes_no_input(prompt):
+    """Validate yes/no user input."""
+    while True:
+        response = input(prompt).strip().lower()
+        if response in ["yes", "no", "y", "n"]:
+            return response in ["yes", "y"]
+        print("Please enter 'yes' or 'no'")
+
+
+def validate_numeric_input(prompt, min_val, max_val):
+    """Validate numeric input within a range."""
+    while True:
+        try:
+            value = int(input(prompt).strip())
+            if min_val <= value <= max_val:
+                return value
+            print(f"Please enter a number between {min_val} and {max_val}")
+        except ValueError:
+            print("Please enter a valid number")
+
+
 def list_checkpoints():
     checkpoints = sorted(glob.glob("q2b_audit_*"), reverse=True)
     return [d for d in checkpoints if os.path.isdir(d)]
 
 
 def select_checkpoint():
+    """Select a checkpoint with improved input validation."""
     checkpoints = list_checkpoints()
 
     if not checkpoints:
@@ -36,25 +58,18 @@ def select_checkpoint():
         except:
             print(f"{i}. {checkpoint}")
 
-    while True:
-        choice = input("\nSelect checkpoint number (0 for fresh start): ").strip()
-        try:
-            choice_num = int(choice)
-            if choice_num == 0:
-                return None, False
-            if 1 <= choice_num <= len(checkpoints):
-                selected_checkpoint = checkpoints[choice_num - 1]
-
-                visualize_only = (
-                    input("Visualize only (skip scraping)? (yes/no): ").strip().lower()
-                    == "yes"
-                )
-
-                return selected_checkpoint, visualize_only
-            else:
-                print(f"Please enter a number between 0 and {len(checkpoints)}")
-        except ValueError:
-            print("Please enter a valid number")
+    choice_num = validate_numeric_input(
+        "\nSelect checkpoint number (0 for fresh start): ", 0, len(checkpoints)
+    )
+    
+    if choice_num == 0:
+        return None, False
+    
+    selected_checkpoint = checkpoints[choice_num - 1]
+    
+    visualize_only = validate_yes_no_input("Visualize only (skip scraping)? (yes/no): ")
+    
+    return selected_checkpoint, visualize_only
 
 
 def main():
@@ -121,15 +136,15 @@ def main():
         return
 
     pages_to_scrape = max_page - start_page + 1
-    confirm_scrape = input(
+    confirm_scrape = validate_yes_no_input(
         f"This will scrape {pages_to_scrape:,} pages (from {start_page:,} to {max_page:,}). Continue? (yes/no): "
     )
 
-    confirm_archive = input(
+    confirm_archive = validate_yes_no_input(
         "Do you want to archive a sample of the articles to Wayback Machine? (yes/no): "
     )
 
-    if confirm_scrape.lower() == "yes":
+    if confirm_scrape:
         auditor.scrape_all_pages(max_page, start_page=start_page, sample_every=1)
     else:
         print("Aborted scraping.")
@@ -140,7 +155,7 @@ def main():
     visualizer = Q2BDataVisualizer(input_dir=output_dir)
     visualizer.create_visualizations(report)
 
-    if confirm_archive.lower() == "yes":
+    if confirm_archive:
         archiver = WaybackArchiver(output_dir)
         if not archiver.load_data():
             print("Aborted archiving due to data loading failure.")

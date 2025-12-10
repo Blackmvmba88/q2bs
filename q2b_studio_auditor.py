@@ -7,6 +7,7 @@ import json
 import os
 from collections import defaultdict
 import locale
+from urllib.parse import urlparse
 
 try:
     locale.setlocale(locale.LC_TIME, "es_ES.UTF-8")
@@ -15,6 +16,10 @@ except:
         locale.setlocale(locale.LC_TIME, "Spanish_Spain.1252")
     except:
         print("Warning: Could not set Spanish locale")
+
+# Constants
+UNKNOWN_DATE = "UNKNOWN_DATE"
+NA_VALUE = "N/A"
 
 
 class Q2BStudioAuditor:
@@ -33,6 +38,7 @@ class Q2BStudioAuditor:
         )
         self.articles = {}
         self.articles_by_date = defaultdict(list)
+        self.validation_errors = 0
 
         if create_output_dir:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -41,6 +47,53 @@ class Q2BStudioAuditor:
             print(f"Output directory: {self.output_dir}")
         else:
             self.output_dir = None
+
+    def validate_url(self, url):
+        """Validate that a URL is properly formatted and belongs to the expected domain."""
+        if not url or not isinstance(url, str):
+            return False
+        
+        try:
+            parsed = urlparse(url)
+            # Check that URL has scheme and netloc
+            if not parsed.scheme or not parsed.netloc:
+                return False
+            # Check that URL belongs to q2bstudio domain (exact match or subdomain)
+            # Split domain into parts to validate properly
+            domain_parts = parsed.netloc.split('.')
+            if len(domain_parts) < 2:
+                return False
+            # Check if the last two parts are "q2bstudio" and "com"
+            if domain_parts[-2] != "q2bstudio" or domain_parts[-1] != "com":
+                return False
+            return True
+        except Exception:
+            return False
+
+    def validate_article_data(self, article_data):
+        """Validate that article data contains all required fields and is properly formatted."""
+        if not isinstance(article_data, dict):
+            return False
+        
+        # Check required fields
+        required_fields = ["url", "title", "date_raw", "date_parsed", "page_num"]
+        for field in required_fields:
+            if field not in article_data:
+                return False
+        
+        # Validate URL
+        if not self.validate_url(article_data["url"]):
+            return False
+        
+        # Validate title is not empty
+        if not article_data["title"] or article_data["title"] == NA_VALUE:
+            return False
+        
+        # Validate page number is positive
+        if not isinstance(article_data["page_num"], int) or article_data["page_num"] < 1:
+            return False
+        
+        return True
 
     def get_max_page_number(self):
         print("\nGetting maximum page number...")
@@ -75,20 +128,33 @@ class Q2BStudioAuditor:
             return None
 
     def parse_spanish_date(self, date_str: str):
+        """Parse Spanish-format date strings with improved validation."""
+        if not date_str or date_str == NA_VALUE:
+            return UNKNOWN_DATE
+        
         try:
+            # Remove day of week if present (e.g., "lunes, 20 de enero de 2025")
             date_parts = date_str.split(",", 1)
             if len(date_parts) > 1:
                 clean_date = date_parts[1].strip()
             else:
                 clean_date = date_str.strip()
-
+            
+            # Validate the date format before parsing
+            if "de" not in clean_date:
+                return UNKNOWN_DATE
+            
             date_obj = datetime.strptime(clean_date, "%d de %B de %Y")
             return date_obj.strftime("%Y-%m-%d")
-        except Exception as e:
-            print(f"Could not parse date '{date_str}': {e}")
-            return "UNKNOWN_DATE"
+        except ValueError:
+            # Specific error for date parsing
+            return UNKNOWN_DATE
+        except Exception:
+            # Catch any other unexpected errors
+            return UNKNOWN_DATE
 
     def scrape_page(self, page_num):
+        """Scrape a single page with improved validation."""
         url = f"{self.blog_url}/page/{page_num}" if page_num > 1 else self.blog_url
         articles_on_page = []
 
@@ -104,10 +170,17 @@ class Q2BStudioAuditor:
                         continue
 
                     article_url = self.base_url + link_elem["href"]
+                    
+                    # Validate URL before proceeding
+                    if not self.validate_url(article_url):
+                        self.validation_errors += 1
+                        continue
+                    
                     title_elem = item.find("div", class_="title")
-                    title = title_elem.get_text().strip() if title_elem else "N/A"
+                    title = title_elem.get_text().strip() if title_elem else NA_VALUE
+                    
                     tags_elem = item.find("div", class_="tags")
-                    date_str = "N/A"
+                    date_str = NA_VALUE
                     if tags_elem:
                         inner = tags_elem.find("div", class_="inner")
                         if inner:
@@ -125,10 +198,15 @@ class Q2BStudioAuditor:
                         "page_num": page_num,
                     }
 
-                    articles_on_page.append(article_data)
+                    # Validate article data before adding
+                    if self.validate_article_data(article_data):
+                        articles_on_page.append(article_data)
+                    else:
+                        self.validation_errors += 1
 
-                except Exception as e:
-                    print(f"Error parsing article: {e}")
+                except Exception:
+                    # Skip articles that fail to parse
+                    self.validation_errors += 1
                     continue
 
             return articles_on_page
@@ -170,6 +248,8 @@ class Q2BStudioAuditor:
 
         print(f"\nScraping complete!")
         print(f"Total articles collected: {len(self.articles):,}")
+        if self.validation_errors > 0:
+            print(f"Validation errors skipped: {self.validation_errors}")
 
         self.rebuild_articles_by_date()
 
@@ -242,7 +322,7 @@ class Q2BStudioAuditor:
             daily_stats[article["date_parsed"]] += 1
 
         known_date_articles_per_day = {
-            date: count for date, count in daily_stats.items() if date != "UNKNOWN_DATE"
+            date: count for date, count in daily_stats.items() if date != UNKNOWN_DATE
         }
 
         total_unique_articles = len(all_unique_articles)
@@ -289,6 +369,7 @@ class Q2BStudioAuditor:
         return report
 
     def load_checkpoint(self, checkpoint_dir):
+        """Load checkpoint with validation."""
         print(f"\nLoading checkpoint from: {checkpoint_dir}")
 
         checkpoint_file = os.path.join(checkpoint_dir, "checkpoint.json")
@@ -300,14 +381,38 @@ class Q2BStudioAuditor:
             with open(checkpoint_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-            for article in data.get("articles", []):
-                self.articles[article["url"]] = article
+            # Validate checkpoint data structure
+            if not isinstance(data, dict):
+                print("Invalid checkpoint format: not a dictionary")
+                return False
+            
+            if "articles" not in data:
+                print("Invalid checkpoint format: missing 'articles' key")
+                return False
+            
+            articles_list = data.get("articles", [])
+            if not isinstance(articles_list, list):
+                print("Invalid checkpoint format: 'articles' is not a list")
+                return False
+            
+            # Load articles with validation
+            valid_count = 0
+            invalid_count = 0
+            for article in articles_list:
+                # Validate each article before loading
+                if self.validate_article_data(article):
+                    self.articles[article["url"]] = article
+                    valid_count += 1
+                else:
+                    invalid_count += 1
 
             self.rebuild_articles_by_date()
 
             self.output_dir = checkpoint_dir
 
-            print(f"Loaded {len(self.articles):,} articles from checkpoint")
+            print(f"Loaded {valid_count:,} valid articles from checkpoint")
+            if invalid_count > 0:
+                print(f"Skipped {invalid_count:,} invalid articles from checkpoint")
 
             max_page_scraped = max(
                 (article["page_num"] for article in self.articles.values()), default=0
@@ -316,8 +421,11 @@ class Q2BStudioAuditor:
 
             return max_page_scraped
 
+        except json.JSONDecodeError:
+            print(f"Error: Checkpoint file is not valid JSON")
+            return False
         except Exception as e:
-            print(f"Error loading checkpoint: {e}")
+            print(f"Error loading checkpoint: {str(e)}")
             return False
 
     def extract_article_id(self, url):
