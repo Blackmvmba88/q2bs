@@ -17,6 +17,10 @@ except:
     except:
         print("Warning: Could not set Spanish locale")
 
+# Constants
+UNKNOWN_DATE = "UNKNOWN_DATE"
+NA_VALUE = "N/A"
+
 
 class Q2BStudioAuditor:
     def __init__(self, create_output_dir=True):
@@ -54,8 +58,8 @@ class Q2BStudioAuditor:
             # Check that URL has scheme and netloc
             if not parsed.scheme or not parsed.netloc:
                 return False
-            # Check that URL belongs to q2bstudio domain
-            if "q2bstudio.com" not in parsed.netloc:
+            # Check that URL belongs to q2bstudio domain (exact match or subdomain)
+            if not (parsed.netloc == "q2bstudio.com" or parsed.netloc == "www.q2bstudio.com" or parsed.netloc.endswith(".q2bstudio.com")):
                 return False
             return True
         except Exception:
@@ -77,7 +81,7 @@ class Q2BStudioAuditor:
             return False
         
         # Validate title is not empty
-        if not article_data["title"] or article_data["title"] == "N/A":
+        if not article_data["title"] or article_data["title"] == NA_VALUE:
             return False
         
         # Validate page number is positive
@@ -120,8 +124,8 @@ class Q2BStudioAuditor:
 
     def parse_spanish_date(self, date_str: str):
         """Parse Spanish-format date strings with improved validation."""
-        if not date_str or date_str == "N/A":
-            return "UNKNOWN_DATE"
+        if not date_str or date_str == NA_VALUE:
+            return UNKNOWN_DATE
         
         try:
             # Remove day of week if present (e.g., "lunes, 20 de enero de 2025")
@@ -133,16 +137,16 @@ class Q2BStudioAuditor:
             
             # Validate the date format before parsing
             if "de" not in clean_date:
-                return "UNKNOWN_DATE"
+                return UNKNOWN_DATE
             
             date_obj = datetime.strptime(clean_date, "%d de %B de %Y")
             return date_obj.strftime("%Y-%m-%d")
-        except ValueError as e:
+        except ValueError:
             # Specific error for date parsing
-            return "UNKNOWN_DATE"
-        except Exception as e:
+            return UNKNOWN_DATE
+        except Exception:
             # Catch any other unexpected errors
-            return "UNKNOWN_DATE"
+            return UNKNOWN_DATE
 
     def scrape_page(self, page_num):
         """Scrape a single page with improved validation."""
@@ -168,10 +172,10 @@ class Q2BStudioAuditor:
                         continue
                     
                     title_elem = item.find("div", class_="title")
-                    title = title_elem.get_text().strip() if title_elem else "N/A"
+                    title = title_elem.get_text().strip() if title_elem else NA_VALUE
                     
                     tags_elem = item.find("div", class_="tags")
-                    date_str = "N/A"
+                    date_str = NA_VALUE
                     if tags_elem:
                         inner = tags_elem.find("div", class_="inner")
                         if inner:
@@ -313,7 +317,7 @@ class Q2BStudioAuditor:
             daily_stats[article["date_parsed"]] += 1
 
         known_date_articles_per_day = {
-            date: count for date, count in daily_stats.items() if date != "UNKNOWN_DATE"
+            date: count for date, count in daily_stats.items() if date != UNKNOWN_DATE
         }
 
         total_unique_articles = len(all_unique_articles)
@@ -412,11 +416,11 @@ class Q2BStudioAuditor:
 
             return max_page_scraped
 
-        except json.JSONDecodeError as e:
-            print(f"Error: Checkpoint file is not valid JSON: {e}")
+        except json.JSONDecodeError:
+            print(f"Error: Checkpoint file is not valid JSON")
             return False
-        except Exception as e:
-            print(f"Error loading checkpoint: {e}")
+        except Exception:
+            print(f"Error loading checkpoint")
             return False
 
     def extract_article_id(self, url):

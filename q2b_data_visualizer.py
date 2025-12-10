@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from datetime import datetime as dt, timedelta
 
+# Constants
+UNKNOWN_DATE = "UNKNOWN_DATE"
+
 
 class Q2BDataVisualizer:
     def __init__(self, input_dir):
@@ -166,10 +169,10 @@ class Q2BDataVisualizer:
 
         dates_str = list(daily_data.keys())
 
-        valid_dates_str = [d for d in dates_str if d != "UNKNOWN_DATE"]
+        valid_dates_str = [d for d in dates_str if d != UNKNOWN_DATE]
         if not valid_dates_str:
             print(
-                "No valid dates after filtering 'UNKNOWN_DATE'. Skipping 2_timeline.png"
+                f"No valid dates after filtering '{UNKNOWN_DATE}'. Skipping 2_timeline.png"
             )
             return
 
@@ -261,7 +264,7 @@ class Q2BDataVisualizer:
     def plot_stats_summary(self, report, output_dir, colors):
 
         daily_data = report["daily_statistics"]["articles_per_day"]
-        valid_data = {k: v for k, v in daily_data.items() if k != "UNKNOWN_DATE"}
+        valid_data = {k: v for k, v in daily_data.items() if k != UNKNOWN_DATE}
 
         last_4_weeks_data = {}
         last_4_weeks_total = 0
