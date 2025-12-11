@@ -66,6 +66,11 @@ class Q2BDataVisualizer:
                 },
                 "stats_summary": {
                     "background_color": "#f0f0f0",
+                    "text_va": "center",
+                    "text_ha": "center",
+                    "target_label": "Q2BSTUDIO\n(Last 4 Weeks)",
+                    "comparison_bar_color": "#98D8C8",
+                    "target_bar_color": "#FF6B6B",
                     "comparison_sources": [
                         {"name": "TechCrunch", "articles_per_day": 40},
                         {"name": "The Verge", "articles_per_day": 30},
@@ -316,20 +321,23 @@ class Q2BDataVisualizer:
 
         num_days = (dates[-1] - dates[0]).days if dates else 0
 
+        # Use date format configuration
+        date_fmt_cfg = viz_cfg["timeline"]["date_format"]
+        
         if num_days > 365 * 2:
             ax.xaxis.set_major_locator(mdates.YearLocator())
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter(date_fmt_cfg["long_range"]))
         elif num_days > 90:
             ax.xaxis.set_major_locator(mdates.MonthLocator(interval=3))
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter(date_fmt_cfg["medium_range"]))
         elif num_days > 30:
             ax.xaxis.set_major_locator(
                 mdates.WeekdayLocator(byweekday=mdates.MO, interval=2)
             )
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter(date_fmt_cfg["short_range"]))
         else:
             ax.xaxis.set_major_locator(mdates.DayLocator())
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter(date_fmt_cfg["short_range"]))
 
         fonts_cfg = viz_cfg["fonts"]
         ax.set_xlabel("Date", fontsize=fonts_cfg["xlabel"], fontweight="bold")
@@ -507,16 +515,19 @@ class Q2BDataVisualizer:
 
         # Build comparisons from config
         comparisons = [(src["name"], src["articles_per_day"]) for src in stats_cfg["comparison_sources"]]
-        comparisons.append(("Q2BSTUDIO\n(Last 4 Weeks)", last_4_weeks_avg))
+        comparisons.append((stats_cfg["target_label"], last_4_weeks_avg))
 
         names = [c[0] for c in comparisons]
         values = [c[1] for c in comparisons]
 
+        # Use configured colors for bars
         chart_cfg = viz_cfg["chart_settings"]
+        comparison_colors = [stats_cfg["comparison_bar_color"]] * (len(comparisons) - 1) + [stats_cfg["target_bar_color"]]
+        
         bars = ax4.barh(
             names,
             values,
-            color=[colors[4]] * (len(comparisons) - 1) + [colors[0]],
+            color=comparison_colors,
             edgecolor="black",
             linewidth=chart_cfg["bar_edge_width"],
         )

@@ -68,6 +68,9 @@ stats_summary:
   background_color: "#f0f0f0"
   text_va: "center"
   text_ha: "center"
+  target_label: "Q2BSTUDIO\n(Last 4 Weeks)"  # Label for the audited target
+  comparison_bar_color: "#98D8C8"  # Color for comparison bars
+  target_bar_color: "#FF6B6B"      # Color for target (Q2BSTUDIO) bar
   comparison_sources:
     - name: "TechCrunch"
       articles_per_day: 40
