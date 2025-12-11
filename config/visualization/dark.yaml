@@ -1,0 +1,18 @@
+# @package visualization
+# Dark theme visualization configuration
+# Alternative color scheme for dark backgrounds
+# This only overrides colors, inheriting all other settings from default.yaml
+
+# Import default settings first
+defaults:
+  - default
+
+# Color palette - darker theme (override only colors)
+colors:
+  primary: "#E74C3C"      # Darker red
+  secondary: "#3498DB"    # Darker blue
+  tertiary: "#2C3E50"     # Dark gray-blue
+  quaternary: "#E67E22"   # Dark orange
+  quinary: "#16A085"      # Dark teal
+  partial_day: "#7F8C8D"  # Darker gray
+  average_line: "#F39C12" # Dark yellow

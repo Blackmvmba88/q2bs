@@ -87,9 +87,12 @@ matplotlib>=3.7.0
 streamlit>=1.28.0
 plotly>=5.17.0
 pandas>=2.0.0
+hydra-core>=1.3.0
 ```
 
 All dependencies are listed in `requirements.txt` and will be installed automatically.
+
+**Note:** Hydra is a configuration management framework that enables flexible and reproducible visualizations through YAML configuration files.
 
 ## Installation
 
@@ -247,6 +250,45 @@ streamlit run dashboard.py
 - 🎯 **Checkpoint selection**: Switch between different scraped datasets
 
 The dashboard runs in your browser and provides an intuitive interface for exploring the data without coding.
+
+### Hydra-Powered Visualization (New!)
+
+Use Hydra configuration management for advanced visualization customization:
+
+```bash
+# Basic usage with default configuration
+python visualize_with_hydra.py checkpoint_dir=q2b_audit_20251208_103810
+
+# Use dark theme color scheme
+python visualize_with_hydra.py checkpoint_dir=q2b_audit_20251208_103810 visualization=dark
+
+# Override specific colors
+python visualize_with_hydra.py checkpoint_dir=q2b_audit_20251208_103810 'visualization.colors.primary="#FF0000"'
+
+# Change output DPI for higher quality
+python visualize_with_hydra.py checkpoint_dir=q2b_audit_20251208_103810 output.dpi=600
+
+# Combine multiple overrides
+python visualize_with_hydra.py checkpoint_dir=q2b_audit_20251208_103810 visualization=dark output.dpi=150
+```
+
+**Benefits of Hydra configuration:**
+- 🎨 **Flexible styling**: Easy to switch between color schemes and themes
+- ⚙️ **Reproducible**: All visualization parameters in versioned config files
+- 🔧 **Command-line overrides**: Change any parameter without editing code
+- 📁 **Multiple configs**: Create custom configurations for different use cases
+- 🔄 **Composable**: Mix and match configuration groups
+
+**Available configuration options:**
+- Colors (primary, secondary, partial_day, average_line, etc.)
+- Chart dimensions (width, height for each chart type)
+- Fonts (title, labels, legend, annotations)
+- Chart settings (alpha, line width, marker size, grid alpha)
+- Output settings (DPI, bbox_inches, graphs directory)
+- Label display thresholds
+- Comparison sources (benchmarks)
+
+Configuration files are located in `config/` directory. Create your own theme by adding a new YAML file in `config/visualization/`.
 
 ### Visualization-Only Mode
 

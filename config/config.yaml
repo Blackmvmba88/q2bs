@@ -1,0 +1,17 @@
+# Main configuration file for Q2BSTUDIO Auditor visualizations
+defaults:
+  - visualization: default
+  - _self_
+
+# Checkpoint directory (override via command line)
+checkpoint_dir: null
+
+# Output settings
+output:
+  graphs_dir: "graphs"
+  dpi: 300
+  bbox_inches: "tight"
+
+# Style settings
+style:
+  theme: "seaborn-v0_8-darkgrid"

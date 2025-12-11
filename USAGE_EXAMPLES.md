@@ -351,6 +351,116 @@ report = auditor.generate_report()
 auditor.export_to_s3("s3://bucket/reports/")
 ```
 
+## Hydra-Powered Visualization
+
+### Basic Hydra Visualization
+
+Generate visualizations with Hydra configuration management:
+
+```bash
+# Default configuration
+python visualize_with_hydra.py checkpoint_dir=q2b_audit_20251210_120000
+```
+
+This provides the same visualizations as the standard pipeline but with full configuration control.
+
+### Using Alternative Themes
+
+```bash
+# Dark color scheme
+python visualize_with_hydra.py checkpoint_dir=q2b_audit_20251210_120000 visualization=dark
+```
+
+### Override Specific Parameters
+
+```bash
+# Change primary color
+python visualize_with_hydra.py checkpoint_dir=q2b_audit_20251210_120000 'visualization.colors.primary="#FF0000"'
+
+# High-resolution output for publications
+python visualize_with_hydra.py checkpoint_dir=q2b_audit_20251210_120000 output.dpi=600
+
+# Change chart dimensions
+python visualize_with_hydra.py checkpoint_dir=q2b_audit_20251210_120000 visualization.dimensions.daily_articles.width=20
+
+# Multiple overrides
+python visualize_with_hydra.py checkpoint_dir=q2b_audit_20251210_120000 visualization=dark output.dpi=150 'visualization.colors.average_line="#00FF00"'
+```
+
+### Create Custom Color Scheme
+
+Create a new file `config/visualization/custom.yaml`:
+
+```yaml
+# @package visualization
+# Custom color scheme
+
+defaults:
+  - default
+
+colors:
+  primary: "#8B0000"      # Dark red
+  secondary: "#006400"    # Dark green
+  tertiary: "#00008B"     # Dark blue
+  quaternary: "#8B4513"   # Saddle brown
+  quinary: "#2F4F4F"      # Dark slate gray
+  partial_day: "#A9A9A9"  # Dark gray
+  average_line: "#FFD700" # Gold
+```
+
+Then use it:
+
+```bash
+python visualize_with_hydra.py checkpoint_dir=q2b_audit_20251210_120000 visualization=custom
+```
+
+### Configuration for Different Outputs
+
+```bash
+# For presentations (lower DPI, larger fonts)
+python visualize_with_hydra.py checkpoint_dir=q2b_audit_20251210_120000 \
+  output.dpi=150 \
+  visualization.fonts.title=18 \
+  visualization.fonts.xlabel=16
+
+# For print publications (high DPI)
+python visualize_with_hydra.py checkpoint_dir=q2b_audit_20251210_120000 \
+  output.dpi=600 \
+  visualization.chart_settings.line_width=2
+
+# For social media (specific dimensions)
+python visualize_with_hydra.py checkpoint_dir=q2b_audit_20251210_120000 \
+  visualization.dimensions.daily_articles.width=10 \
+  visualization.dimensions.daily_articles.height=10
+```
+
+### Hydra Benefits
+
+1. **Reproducibility**: Configuration files version-controlled with code
+2. **No Code Changes**: Adjust visualizations without modifying Python files
+3. **Multiple Versions**: Generate different styles for different audiences
+4. **Command-line Control**: Override any parameter on the fly
+5. **Experiment Tracking**: Hydra automatically saves configurations in `outputs/` directory
+
+### Advanced: Multiple Comparisons
+
+Modify `config/visualization/default.yaml` to add more comparison sources:
+
+```yaml
+stats_summary:
+  comparison_sources:
+    - name: TechCrunch
+      articles_per_day: 40
+    - name: The Verge
+      articles_per_day: 30
+    - name: NY Times
+      articles_per_day: 250
+    - name: Medium (top authors)
+      articles_per_day: 100
+    - name: WordPress.com
+      articles_per_day: 500
+```
+
 ## Best Practices
 
 1. **Always use sampling for testing** - Don't scrape 36,000 pages during development
@@ -361,6 +471,8 @@ auditor.export_to_s3("s3://bucket/reports/")
 6. **Monitor disk space** - Large scrapes can produce multi-GB CSV files
 7. **Run similarity analysis offline** - Do it after scraping completes
 8. **Use the dashboard for exploration** - It's faster than writing custom pandas scripts
+9. **Use Hydra for visualization variants** - Generate multiple styles without code changes
+10. **Keep config files in version control** - Track visualization settings with your code
 
 ## Support and Resources
 

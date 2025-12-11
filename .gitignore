@@ -13,6 +13,13 @@ __pycache__/
 # Output directories (checkpoints)
 q2b_audit_*/
 
+# Generated graphs
+**/graphs/
+
+# Hydra outputs
+outputs/
+.hydra/
+
 # Temporary files
 article.md
 *.tmp
