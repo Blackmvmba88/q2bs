@@ -1,0 +1,16 @@
+visualization:
+  colors:
+    primary: '#E74C3C'
+    secondary: '#3498DB'
+    tertiary: '#2C3E50'
+    quaternary: '#E67E22'
+    quinary: '#16A085'
+    partial_day: '#7F8C8D'
+    average_line: '#F39C12'
+checkpoint_dir: sample_data
+output:
+  graphs_dir: graphs
+  dpi: 300
+  bbox_inches: tight
+style:
+  theme: seaborn-v0_8-darkgrid

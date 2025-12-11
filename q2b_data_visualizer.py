@@ -2,23 +2,104 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from datetime import datetime as dt, timedelta
+from typing import Optional, Dict, Any
 
 # Constants
 UNKNOWN_DATE = "UNKNOWN_DATE"
 
 
 class Q2BDataVisualizer:
-    def __init__(self, input_dir):
+    def __init__(self, input_dir, config: Optional[Dict[str, Any]] = None):
         self.input_dir = input_dir
+        self.config = config or self._get_default_config()
+
+    def _get_default_config(self) -> Dict[str, Any]:
+        """Return default configuration if no Hydra config provided."""
+        return {
+            "visualization": {
+                "colors": {
+                    "primary": "#FF6B6B",
+                    "secondary": "#4ECDC4",
+                    "tertiary": "#45B7D1",
+                    "quaternary": "#FFA07A",
+                    "quinary": "#98D8C8",
+                    "partial_day": "#CCCCCC",
+                    "average_line": "red"
+                },
+                "dimensions": {
+                    "daily_articles": {"width": 14, "height": 8},
+                    "timeline": {"width": 14, "height": 8},
+                    "stats_summary": {"width": 16, "height": 12}
+                },
+                "fonts": {
+                    "title": 14,
+                    "xlabel": 14,
+                    "ylabel": 14,
+                    "legend": 12,
+                    "annotation_large": 60,
+                    "annotation_medium": 25,
+                    "annotation_small": 18,
+                    "tick_small": 8,
+                    "tick_medium": 9,
+                    "tick_large": 10
+                },
+                "chart_settings": {
+                    "bar_alpha": 0.8,
+                    "bar_edge_width": 1.5,
+                    "line_width": 3,
+                    "marker_size": 12,
+                    "marker_edge_width": 2,
+                    "peak_marker_size": 25,
+                    "grid_alpha": 0.3
+                },
+                "labels": {
+                    "max_days_full_labels": 15,
+                    "max_days_half_labels": 30,
+                    "max_days_fifth_labels": 90,
+                    "max_days_tenth_labels": 180
+                },
+                "timeline": {
+                    "x_axis_rotation": {
+                        "max_days_no_rotation": 30,
+                        "default_rotation": 45
+                    }
+                },
+                "stats_summary": {
+                    "background_color": "#f0f0f0",
+                    "comparison_sources": [
+                        {"name": "TechCrunch", "articles_per_day": 40},
+                        {"name": "The Verge", "articles_per_day": 30},
+                        {"name": "NY Times", "articles_per_day": 250}
+                    ]
+                }
+            },
+            "output": {
+                "graphs_dir": "graphs",
+                "dpi": 300,
+                "bbox_inches": "tight"
+            },
+            "style": {
+                "theme": "seaborn-v0_8-darkgrid"
+            }
+        }
 
     def create_visualizations(self, report):
         print("\nCreating visualizations...")
 
-        graphs_dir = os.path.join(self.input_dir, "graphs")
+        graphs_dir = os.path.join(self.input_dir, self.config["output"]["graphs_dir"])
         os.makedirs(graphs_dir, exist_ok=True)
 
-        plt.style.use("seaborn-v0_8-darkgrid")
-        colors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8"]
+        plt.style.use(self.config["style"]["theme"])
+        
+        # Extract colors from config
+        color_cfg = self.config["visualization"]["colors"]
+        colors = [
+            color_cfg["primary"],
+            color_cfg["secondary"],
+            color_cfg["tertiary"],
+            color_cfg["quaternary"],
+            color_cfg["quinary"]
+        ]
 
         self.plot_daily_articles(report, graphs_dir, colors)
         self.plot_daily_timeline(report, graphs_dir, colors)
@@ -32,7 +113,13 @@ class Q2BDataVisualizer:
         if not daily_data:
             return
 
-        _, ax = plt.subplots(figsize=(14, 8))
+        # Get configuration values
+        viz_cfg = self.config["visualization"]
+        dims = viz_cfg["dimensions"]["daily_articles"]
+        chart_cfg = viz_cfg["chart_settings"]
+        color_cfg = viz_cfg["colors"]
+        
+        _, ax = plt.subplots(figsize=(dims["width"], dims["height"]))
 
         dates = list(daily_data.keys())
         counts = list(daily_data.values())
@@ -43,14 +130,17 @@ class Q2BDataVisualizer:
         bar_colors = []
         for date in dates:
             if date == earliest or date == latest:
-                bar_colors.append("#CCCCCC")
+                bar_colors.append(color_cfg["partial_day"])
             elif date == max(daily_data, key=daily_data.get):
                 bar_colors.append(colors[1])
             else:
                 bar_colors.append(colors[0])
 
         ax.bar(
-            dates, counts, color=bar_colors, alpha=0.8, edgecolor="black", linewidth=1.5
+            dates, counts, color=bar_colors, 
+            alpha=chart_cfg["bar_alpha"], 
+            edgecolor="black", 
+            linewidth=chart_cfg["bar_edge_width"]
         )
 
         num_days = len(dates)
@@ -64,21 +154,25 @@ class Q2BDataVisualizer:
         important_indices.add(0)
         important_indices.add(len(dates) - 1)
 
-        if num_days <= 15:
+        # Use label configuration
+        label_cfg = viz_cfg["labels"]
+        fonts_cfg = viz_cfg["fonts"]
+        
+        if num_days <= label_cfg["max_days_full_labels"]:
             indices_to_show = set(range(num_days))
-            font_size = 10
-        elif num_days <= 30:
+            font_size = fonts_cfg["tick_large"]
+        elif num_days <= label_cfg["max_days_half_labels"]:
             indices_to_show = set(range(0, num_days, 2)) | important_indices
-            font_size = 9
-        elif num_days <= 90:
+            font_size = fonts_cfg["tick_medium"]
+        elif num_days <= label_cfg["max_days_fifth_labels"]:
             indices_to_show = set(range(0, num_days, 5)) | important_indices
-            font_size = 8
-        elif num_days <= 180:
+            font_size = fonts_cfg["tick_small"]
+        elif num_days <= label_cfg["max_days_tenth_labels"]:
             indices_to_show = set(range(0, num_days, 10)) | important_indices
-            font_size = 8
+            font_size = fonts_cfg["tick_small"]
         else:
             indices_to_show = important_indices
-            font_size = 9
+            font_size = fonts_cfg["tick_medium"]
 
         for i, (date, count) in enumerate(zip(dates, counts)):
             if i in indices_to_show:
@@ -86,7 +180,7 @@ class Q2BDataVisualizer:
                 if date == earliest or date == latest:
                     label += "\n(partial)"
 
-                if num_days > 180 and i in important_indices:
+                if num_days > label_cfg["max_days_tenth_labels"] and i in important_indices:
                     label = f"{date}\n{label}"
 
                 ax.text(
@@ -102,31 +196,31 @@ class Q2BDataVisualizer:
         avg = report["daily_statistics"]["average_per_day"]
         ax.axhline(
             y=avg,
-            color="red",
+            color=color_cfg["average_line"],
             linestyle="--",
             linewidth=2,
             label=f"Average: {avg:,.0f} articles/day (excl. partial days)",
             alpha=0.7,
         )
 
-        ax.set_xlabel("Date", fontsize=14, fontweight="bold")
-        ax.set_ylabel("Number of Articles", fontsize=14, fontweight="bold")
+        ax.set_xlabel("Date", fontsize=fonts_cfg["xlabel"], fontweight="bold")
+        ax.set_ylabel("Number of Articles", fontsize=fonts_cfg["ylabel"], fontweight="bold")
 
         date_range = f"{earliest} to {latest}"
         label_info = (
             f"\nShowing {len(indices_to_show)} of {num_days} days"
-            if num_days > 90
+            if num_days > label_cfg["max_days_fifth_labels"]
             else ""
         )
         ax.set_title(
             f'Q2BSTUDIO: Daily Article Production\n"Industrial-Scale Automated Content Generation"\nData Period: {date_range}{label_info}\nNote: First and last days excluded from average (incomplete data)',
-            fontsize=14,
+            fontsize=fonts_cfg["title"],
             fontweight="bold",
             pad=20,
         )
 
-        ax.legend(fontsize=12, loc="upper left")
-        ax.grid(True, alpha=0.3, axis="y")
+        ax.legend(fontsize=fonts_cfg["legend"], loc="upper left")
+        ax.grid(True, alpha=chart_cfg["grid_alpha"], axis="y")
 
         if num_days <= 7:
             plt.xticks(rotation=0)
@@ -150,10 +244,11 @@ class Q2BDataVisualizer:
             plt.xticks(tick_positions, tick_labels, rotation=45, ha="right")
 
         plt.tight_layout()
+        output_cfg = self.config["output"]
         plt.savefig(
             os.path.join(output_dir, "1_daily_articles.png"),
-            dpi=300,
-            bbox_inches="tight",
+            dpi=output_cfg["dpi"],
+            bbox_inches=output_cfg["bbox_inches"],
         )
         plt.close()
 
@@ -165,7 +260,12 @@ class Q2BDataVisualizer:
         if not daily_data:
             return
 
-        _, ax = plt.subplots(figsize=(14, 8))
+        # Get configuration values
+        viz_cfg = self.config["visualization"]
+        dims = viz_cfg["dimensions"]["timeline"]
+        chart_cfg = viz_cfg["chart_settings"]
+        
+        _, ax = plt.subplots(figsize=(dims["width"], dims["height"]))
 
         dates_str = list(daily_data.keys())
 
@@ -188,12 +288,12 @@ class Q2BDataVisualizer:
             dates,
             counts,
             marker="o",
-            markersize=12,
-            linewidth=3,
+            markersize=chart_cfg["marker_size"],
+            linewidth=chart_cfg["line_width"],
             color=colors[3],
             label="Articles Published",
             markeredgecolor="black",
-            markeredgewidth=2,
+            markeredgewidth=chart_cfg["marker_edge_width"],
         )
 
         ax.fill_between(dates, counts, alpha=0.3, color=colors[3])
@@ -207,11 +307,11 @@ class Q2BDataVisualizer:
                 dates[max_idx],
                 counts[max_idx],
                 marker="*",
-                markersize=25,
+                markersize=chart_cfg["peak_marker_size"],
                 color="red",
                 label=f"Peak: {counts[max_idx]:,} articles ({peak_date_str})",
                 markeredgecolor="black",
-                markeredgewidth=2,
+                markeredgewidth=chart_cfg["marker_edge_width"],
             )
 
         num_days = (dates[-1] - dates[0]).days if dates else 0
@@ -231,8 +331,9 @@ class Q2BDataVisualizer:
             ax.xaxis.set_major_locator(mdates.DayLocator())
             ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
 
-        ax.set_xlabel("Date", fontsize=14, fontweight="bold")
-        ax.set_ylabel("Articles Published", fontsize=14, fontweight="bold")
+        fonts_cfg = viz_cfg["fonts"]
+        ax.set_xlabel("Date", fontsize=fonts_cfg["xlabel"], fontweight="bold")
+        ax.set_ylabel("Articles Published", fontsize=fonts_cfg["ylabel"], fontweight="bold")
 
         avg = report["daily_statistics"]["average_per_day"]
         avg_seconds = 86400 / avg if avg > 0 else 0
@@ -240,28 +341,37 @@ class Q2BDataVisualizer:
         date_range = f"{earliest} to {latest}"
         ax.set_title(
             f"Publication Timeline: {date_range}\nAverage: 1 article every {avg_seconds:.1f} seconds",
-            fontsize=14,
+            fontsize=fonts_cfg["title"],
             fontweight="bold",
             pad=20,
         )
 
-        ax.legend(fontsize=12, loc="best")
-        ax.grid(True, alpha=0.3)
+        ax.legend(fontsize=fonts_cfg["legend"], loc="best")
+        ax.grid(True, alpha=chart_cfg["grid_alpha"])
 
-        if num_days > 30 or len(dates) > 10:
-            plt.xticks(rotation=45, ha="right")
+        timeline_cfg = viz_cfg["timeline"]["x_axis_rotation"]
+        if num_days > timeline_cfg["max_days_no_rotation"] or len(dates) > 10:
+            plt.xticks(rotation=timeline_cfg["default_rotation"], ha="right")
         else:
             plt.xticks(rotation=0)
 
         plt.tight_layout()
+        output_cfg = self.config["output"]
         plt.savefig(
-            os.path.join(output_dir, "2_timeline.png"), dpi=300, bbox_inches="tight"
+            os.path.join(output_dir, "2_timeline.png"), 
+            dpi=output_cfg["dpi"], 
+            bbox_inches=output_cfg["bbox_inches"]
         )
         plt.close()
 
         print("Created: 2_timeline.png")
 
     def plot_stats_summary(self, report, output_dir, colors):
+        # Get configuration values
+        viz_cfg = self.config["visualization"]
+        dims = viz_cfg["dimensions"]["stats_summary"]
+        fonts_cfg = viz_cfg["fonts"]
+        stats_cfg = viz_cfg["stats_summary"]
 
         daily_data = report["daily_statistics"]["articles_per_day"]
         valid_data = {k: v for k, v in daily_data.items() if k != UNKNOWN_DATE}
@@ -298,11 +408,11 @@ class Q2BDataVisualizer:
         else:
             date_range_4w = "No data"
 
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(dims["width"], dims["height"]))
 
         fig.suptitle(
             f"Q2BSTUDIO Content Farm: Statistical Analysis (Last 4 Weeks)\nPeriod: {date_range_4w}",
-            fontsize=18,
+            fontsize=fonts_cfg["annotation_small"],
             fontweight="bold",
             y=0.98,
         )
@@ -311,9 +421,9 @@ class Q2BDataVisualizer:
             0.5,
             0.6,
             f"{last_4_weeks_total:,}",
-            ha="center",
-            va="center",
-            fontsize=60,
+            ha=stats_cfg["text_ha"],
+            va=stats_cfg["text_va"],
+            fontsize=fonts_cfg["annotation_large"],
             fontweight="bold",
             color=colors[0],
         )
@@ -321,21 +431,21 @@ class Q2BDataVisualizer:
             0.5,
             0.35,
             "Articles Published\n(Last 4 Weeks)",
-            ha="center",
-            va="center",
-            fontsize=18,
+            ha=stats_cfg["text_ha"],
+            va=stats_cfg["text_va"],
+            fontsize=fonts_cfg["annotation_small"],
             fontweight="bold",
         )
         ax1.axis("off")
-        ax1.set_facecolor("#f0f0f0")
+        ax1.set_facecolor(stats_cfg["background_color"])
 
         ax2.text(
             0.5,
             0.6,
             f"{last_4_weeks_avg:,.0f}",
-            ha="center",
-            va="center",
-            fontsize=60,
+            ha=stats_cfg["text_ha"],
+            va=stats_cfg["text_va"],
+            fontsize=fonts_cfg["annotation_large"],
             fontweight="bold",
             color=colors[1],
         )
@@ -343,9 +453,9 @@ class Q2BDataVisualizer:
             0.5,
             0.35,
             "Articles Per Day\n(Last 4 Weeks Avg)",
-            ha="center",
-            va="center",
-            fontsize=18,
+            ha=stats_cfg["text_ha"],
+            va=stats_cfg["text_va"],
+            fontsize=fonts_cfg["annotation_small"],
             fontweight="bold",
         )
         seconds = 86400 / last_4_weeks_avg if last_4_weeks_avg > 0 else 0
@@ -353,22 +463,22 @@ class Q2BDataVisualizer:
             0.5,
             0.15,
             f"1 article every {seconds:.1f} seconds",
-            ha="center",
-            va="center",
-            fontsize=25,
+            ha=stats_cfg["text_ha"],
+            va=stats_cfg["text_va"],
+            fontsize=fonts_cfg["annotation_medium"],
             color="red",
             fontweight="bold",
         )
         ax2.axis("off")
-        ax2.set_facecolor("#f0f0f0")
+        ax2.set_facecolor(stats_cfg["background_color"])
 
         ax3.text(
             0.5,
             0.6,
             f"{last_4_weeks_peak:,}",
-            ha="center",
-            va="center",
-            fontsize=60,
+            ha=stats_cfg["text_ha"],
+            va=stats_cfg["text_va"],
+            fontsize=fonts_cfg["annotation_large"],
             fontweight="bold",
             color=colors[2],
         )
@@ -376,9 +486,9 @@ class Q2BDataVisualizer:
             0.5,
             0.35,
             "Peak Day\n(Last 4 Weeks Max)",
-            ha="center",
-            va="center",
-            fontsize=18,
+            ha=stats_cfg["text_ha"],
+            va=stats_cfg["text_va"],
+            fontsize=fonts_cfg["annotation_small"],
             fontweight="bold",
         )
         peak_seconds = 86400 / last_4_weeks_peak if last_4_weeks_peak > 0 else 0
@@ -386,31 +496,29 @@ class Q2BDataVisualizer:
             0.5,
             0.15,
             f"1 article every {peak_seconds:.1f} seconds",
-            ha="center",
-            va="center",
-            fontsize=25,
+            ha=stats_cfg["text_ha"],
+            va=stats_cfg["text_va"],
+            fontsize=fonts_cfg["annotation_medium"],
             fontweight="bold",
             color="red",
         )
         ax3.axis("off")
-        ax3.set_facecolor("#f0f0f0")
+        ax3.set_facecolor(stats_cfg["background_color"])
 
-        comparisons = [
-            ("TechCrunch", 40),
-            ("The Verge", 30),
-            ("NY Times", 250),
-            ("Q2BSTUDIO\n(Last 4 Weeks)", last_4_weeks_avg),
-        ]
+        # Build comparisons from config
+        comparisons = [(src["name"], src["articles_per_day"]) for src in stats_cfg["comparison_sources"]]
+        comparisons.append(("Q2BSTUDIO\n(Last 4 Weeks)", last_4_weeks_avg))
 
         names = [c[0] for c in comparisons]
         values = [c[1] for c in comparisons]
 
+        chart_cfg = viz_cfg["chart_settings"]
         bars = ax4.barh(
             names,
             values,
-            color=[colors[4], colors[4], colors[4], colors[0]],
+            color=[colors[4]] * (len(comparisons) - 1) + [colors[0]],
             edgecolor="black",
-            linewidth=1.5,
+            linewidth=chart_cfg["bar_edge_width"],
         )
 
         bars[-1].set_alpha(1.0)
@@ -420,25 +528,26 @@ class Q2BDataVisualizer:
                 value + max(values) * 0.02,
                 i,
                 f"{value:,.0f}",
-                va="center",
-                fontsize=12,
+                va=stats_cfg["text_va"],
+                fontsize=fonts_cfg["legend"],
                 fontweight="bold",
             )
 
-        ax4.set_xlabel("Articles Per Day", fontsize=12, fontweight="bold")
+        ax4.set_xlabel("Articles Per Day", fontsize=fonts_cfg["legend"], fontweight="bold")
         ax4.set_title(
             "Comparison: Daily Output (Last 4 Weeks)\n(Industry estimates - conservative)",
-            fontsize=14,
+            fontsize=fonts_cfg["title"],
             fontweight="bold",
             pad=10,
         )
-        ax4.grid(True, alpha=0.3, axis="x")
+        ax4.grid(True, alpha=chart_cfg["grid_alpha"], axis="x")
 
         plt.tight_layout()
+        output_cfg = self.config["output"]
         plt.savefig(
             os.path.join(output_dir, "3_stats_summary.png"),
-            dpi=300,
-            bbox_inches="tight",
+            dpi=output_cfg["dpi"],
+            bbox_inches=output_cfg["bbox_inches"],
         )
         plt.close()
 

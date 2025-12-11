@@ -1,0 +1,77 @@
+# Default visualization configuration
+# This file contains all the visual parameters for charts and graphs
+
+# Color palette
+colors:
+  primary: "#FF6B6B"      # Main chart color
+  secondary: "#4ECDC4"    # Peak/highlight color
+  tertiary: "#45B7D1"     # Additional accent
+  quaternary: "#FFA07A"   # Timeline color
+  quinary: "#98D8C8"      # Comparison color
+  partial_day: "#CCCCCC"  # Partial day indicator
+  average_line: "red"     # Average line color
+
+# Chart dimensions
+dimensions:
+  daily_articles:
+    width: 14
+    height: 8
+  timeline:
+    width: 14
+    height: 8
+  stats_summary:
+    width: 16
+    height: 12
+
+# Font sizes
+fonts:
+  title: 14
+  xlabel: 14
+  ylabel: 14
+  legend: 12
+  annotation_large: 60
+  annotation_medium: 25
+  annotation_small: 18
+  tick_small: 8
+  tick_medium: 9
+  tick_large: 10
+
+# Chart settings
+chart_settings:
+  bar_alpha: 0.8
+  bar_edge_width: 1.5
+  line_width: 3
+  marker_size: 12
+  marker_edge_width: 2
+  peak_marker_size: 25
+  grid_alpha: 0.3
+
+# Label display settings
+labels:
+  max_days_full_labels: 15      # Show all labels if <= 15 days
+  max_days_half_labels: 30      # Show every 2nd label if <= 30 days
+  max_days_fifth_labels: 90     # Show every 5th label if <= 90 days
+  max_days_tenth_labels: 180    # Show every 10th label if <= 180 days
+
+# Timeline date formatting
+timeline:
+  date_format:
+    long_range: "%Y"           # Format for >2 years
+    medium_range: "%b %Y"      # Format for >90 days
+    short_range: "%b %d"       # Format for <=90 days
+  x_axis_rotation:
+    max_days_no_rotation: 30   # No rotation if <= 30 days
+    default_rotation: 45        # Default rotation angle
+
+# Stats summary specific settings
+stats_summary:
+  background_color: "#f0f0f0"
+  text_va: "center"
+  text_ha: "center"
+  comparison_sources:
+    - name: "TechCrunch"
+      articles_per_day: 40
+    - name: "The Verge"
+      articles_per_day: 30
+    - name: "NY Times"
+      articles_per_day: 250
